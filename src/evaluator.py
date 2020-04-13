@@ -20,7 +20,15 @@ def get_default_sample_from_seq2seq(seq2seq, mode="test"):
 
 
 def evaluate_autoencoder(real=None, pred=None, seq2seq=None, verbose=0, PAD_token=0, EOS_token=2):
-	"""Real and pred should both be 2D arrays."""
+	"""
+    Evaluate if real == pred.
+    Whole accuracy: Only when every token are same in the whole sequence --> correct.
+    Each accuracy: Calculate accuracy based on number of tokens.
+    Real and pred should be both 2D arrays.
+    
+    Real = [[1, 1, 1], [2, 2, 2]], Pred = [[1, 1, 0], [2, 2, 2]]
+    whole_accuracy = 50%, each_accuracy = 83%.
+    """
 	if real is None or pred is None:
 		real, pred = get_default_sample_from_seq2seq(seq2seq)
 	assert len(real.shape) == 2, "Real must be 2d-array."
@@ -58,7 +66,12 @@ def evaluate_autoencoder(real=None, pred=None, seq2seq=None, verbose=0, PAD_toke
 
 def evaluate_autoencoder_at_time(real=None, pred=None, seq2seq=None, time_step=0, 
                                  verbose=1, PAD_token=0, EOS_token=2):
-    """Real and pred should both be 2D arrays.
+    """
+    Used after verification methods (replace some hidden states in decoder) in our paper for "autoencoder".
+    For example, when target token = "A" and target T = 5.
+    Then this accuracy only calculate whether model outputs "A" at t = 5.
+    
+    Real and pred should both be 2D arrays.
     time step: count from 1, no encoder output = 0, match position count, match verify_decoder.
     """
     if real is None or pred is None:
@@ -104,7 +117,10 @@ def evaluate_autoencoder_at_time(real=None, pred=None, seq2seq=None, time_step=0
 
 def evaluate_autoencoder_token(real=None, pred=None, token=None,  
                                 verbose=1, PAD_token=0, EOS_token=2):
-    """Calculate the probability of outputting a token at each time step."""
+    """
+    Calculate the probability (accuracy) of outputting a token at each time step.
+    This is used after replacing hidden states of "counter" neurons.
+    """
     assert len(real.shape) == 2, "Real must be 2d-array."
     assert len(pred.shape) == 2, "Pred must be 2d-array."
     assert real.shape == pred.shape, "Shape of real and pred should be the same."
@@ -128,8 +144,26 @@ def evaluate_autoencoder_token(real=None, pred=None, token=None,
     if verbose == 1:
         print("\tEach accuracy:", [round(x, 2) for x in each_accuracy_list])
 
-        
-
+def evaluate_autoencoder_last_step(real=None, pred=None, EOS_token=2):
+    """
+    Used for "autoenc-last".
+    Calculate only if last word is correct or not.
+    And the last word should appear at the correct time step in pred data.
+    """
+    assert len(real.shape) == 2, "Real must be 2d-array."
+    assert len(pred.shape) == 2, "Pred must be 2d-array."
+    assert real.shape == pred.shape, "Shape of real and pred should be the same."
+    
+    correct = 0
+    for i in range(real.shape[0]):
+        for j in range(real.shape[1]):
+            if real[i][j] == EOS_token:
+                if pred[i][j] == EOS_token and pred[i][j-1] == real[i][j-1]:
+                    correct += 1
+                break
+    return correct / float(real.shape[0])
+    
+    
 """
 def check_accuracy(self, check_list=["word"], N=1000, inputs=None, real=None, pred=None, n=1000):
 		#Compute accuracy of different control signals.

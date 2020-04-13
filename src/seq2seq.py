@@ -6,19 +6,16 @@ import keras.losses  # TODO: Remove this repeated import.
 import numpy as np
 import os  # For makedir.
 import pdb
-
 #import sys
+from pathlib import Path
+from tensorflow.compat import v1 as tf
+tf.disable_v2_behavior()
+
 
 import data_loader
 import build_model
 import utils
 #import word_utils
-
-from pathlib import Path
-from tensorflow.compat import v1 as tf
-
-tf.disable_v2_behavior()
-
 
 
 class Seq2Seq(object):
@@ -28,6 +25,7 @@ class Seq2Seq(object):
 		self.units = args.units 	# Default: 128.
 		self.model_path = args.model_path
 		self.mode = args.mode
+		self.data_name = args.data_name
 		
 		self.get_data()
 		self.seq2seq_model, self.encoder_model, self.decoder_model = build_model.seq2seq(
@@ -40,24 +38,26 @@ class Seq2Seq(object):
 			import data_preprocessing_autoencoder
 			self = data_preprocessing_autoencoder.main(self)
 
-		"""else:
-			self.encoder_in, self.decoder_in, self.decoder_out = data_reader.load_data(task=self.task)
-			# TODO: change max_len = 10, larger than y.shape[1] 
+		elif self.task == "autoenc-last":
+			print("get_data")
+			self.encoder_in, self.decoder_in, self.decoder_out = data_loader.load_data(task=self.task, data_name=self.data_name, data_type="train")
+			self.encoder_in_valid, self.decoder_in_valid, self.decoder_out_valid = data_loader.load_data(task=self.task, data_name=self.data_name, data_type="valid")
+			self.encoder_in_test, self.decoder_in_test, self.decoder_out_test = data_loader.load_data(task=self.task, data_name=self.data_name, data_type="valid")
+			
+			assert self.encoder_in.shape[1] == self.encoder_in_valid.shape[1], "Data size not match"
+			assert self.decoder_in.shape[1] == self.decoder_in_valid.shape[1], "Data size not match"
+            
 			self.src_max_len = self.encoder_in.shape[1]
 			self.tgt_max_len = self.decoder_out.shape[1]
-			#pdb.set_trace()
-
-			if task == "task1":
-				self.src_token_size = np.max(self.encoder_in) + 1  
-			elif (task == "control_length" or task == "control_length_content" 
-				or task == "control_rhyme_content" or task == "control_pos_content" or task == "toy_pos_signal"):
-				self.src_token_size = np.max(self.encoder_in) + 1  # TODO: Remove this if/else.
+			token_size = int(max(np.max(self.encoder_in), np.max(self.decoder_in))) + 1  # Token size of autoencoder are same between encoder data and decoder data.         
+			self.src_token_size = token_size
+			self.tgt_token_size = token_size
+			
+		elif (task == "control_length" or task == "control_length_content" 
+			or task == "control_rhyme_content" or task == "control_pos_content" or task == "toy_pos_signal"):
+			self.src_token_size = np.max(self.encoder_in) + 1  # TODO: Remove this if/else.
 			self.tgt_token_size = np.max(self.decoder_out) + 1
-			print("(Load data) token_size  =", self.src_token_size, self.tgt_token_size)"""
-
-		#self.cut_validation()
-		#self.target = np.zeros([self.batch_size, self.decoder_out.shape[1], self.tgt_token_size])
-		
+		print("(Load data) token_size  =", self.src_token_size, self.tgt_token_size)
 	
 	def load_seq2seq(self, model_path, epoch=None):
 		keras.losses.custom_loss = utils.masked_perplexity_loss
