@@ -10,8 +10,28 @@ Explain the capability of the token-positioning task
     * saved_model/xxx/seq2seq.h5（這是 keras 的存法ＸＤ）
     * result/xxx/training_log.txt
     * xxx = {data_name}_units={units}_seed={seed}
-4. 我的 fake-data 的長相在 app/test-autoencoder-last.ipynb 裡面，可以看跟你想得有沒有一樣
-5. training_log 裡面有三種 validation data 的正確率
+4. training_log 裡面有三種 validation data 的正確率
     * each acc 是每個字分別算正確率
     * all 是整句對才算對
     * last 是這個 task 我特別多寫的，只會看 EOS 前一個字對不對，並確定兩邊的最後一個字出現在同個位子
+5. 我生 fake-data 方法在 app/test-autoencoder-last.ipynb 裡面，可以看跟你想得有沒有一樣
+6. 我的 fake-data 長這樣：（可以訓練到正確率 = 1）
+```python
+encoder_train = np.array([[1, 3, 3, 3, 3, 2],
+                          [0, 1, 3, 3, 3, 2], 
+                         [0, 0, 1, 3, 3, 2],
+                         [0, 0, 0, 1, 3, 2],
+                         [1, 4, 4, 4, 4, 2],
+                         [0, 1, 4, 4, 4, 2],
+                         [0, 0, 1, 4, 4, 2],
+                         [0, 0, 0, 1, 4, 2]])
+decoder_train = np.array([[1, 5, 5, 5, 3, 2],
+                          [1, 5, 5, 3, 2, 0], 
+                         [1, 5, 3, 2, 0, 0],
+                         [1, 3, 2, 0, 0, 0],
+                         [1, 5, 5, 5, 4, 2],
+                         [1, 5, 5, 4, 2, 0],
+                         [1, 5, 4, 2, 0, 0],
+                         [1, 4, 2, 0, 0, 0]])
+```
+
