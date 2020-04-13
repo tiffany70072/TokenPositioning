@@ -4,8 +4,8 @@ Explain the capability of the token-positioning task
 
 
 ## How to train
-在 src 底下，run（這是一個 toy data 的例子）
-```python3 main.py --task=autoenc-last --units=32 --max_epochs=1000 --mode=train --data_name=fake-data --batch_size=8```
+1. 在 src 底下，run（這是一個 toy data 的例子）\\
+```python3 main.py --task=autoenc-last --units=32 --max_epochs=1000 --mode=train --data_name=fake-data --batch_size=8```\\
 (ps: 因為資料筆數只有八筆，所以我設了很大的 max_epoch，你資料筆數多的話，max_epochs 應該設一百以內？）
 
 
