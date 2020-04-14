@@ -35,3 +35,21 @@ decoder_train = np.array([[1, 5, 5, 5, 3, 2],
                           [1, 4, 2, 0, 0, 0]])
 ```
 
+## txt file preprocess
+```python
+import collections
+from keras.preprocessing.sequence import pad_sequences
+
+common_text = collections.Counter 找出 training_data 前 20000 常見的字，照頻率排排序
+src_token = ['PAD', 'SOS', 'EOS'] + common_text + ['OOV']
+src_ctoi = dict((c, i) for i, c in enumerate(src_token)) 
+src_itoc = dict((i, c) for i, c in enumerate(src_token))
+
+src = Map data from txt file to 2d list with type int
+tgt = ...
+# max_src_len = max_tgt_len = 13
+src_padded = pad_sequences(src, maxlen=max_src_len, padding='pre', truncating='pre')  # -> 2d array
+tgt_padded = pad_sequences(tgt, maxlen=max_tgt_len, padding='post', truncating='post')
+
+```
+
