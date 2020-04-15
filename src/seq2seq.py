@@ -38,7 +38,7 @@ class Seq2Seq(object):
 			import data_preprocessing_autoencoder
 			self = data_preprocessing_autoencoder.main(self)
 
-		elif self.task == "autoenc-last":
+		elif self.task == "autoenc-last" or self.task == 'token-posi':
 			print("get_data")
 			self.encoder_in, self.decoder_in, self.decoder_out = data_loader.load_data(task=self.task, data_name=self.data_name, data_type="train")
 			self.encoder_in_valid, self.decoder_in_valid, self.decoder_out_valid = data_loader.load_data(task=self.task, data_name=self.data_name, data_type="valid")

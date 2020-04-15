@@ -27,16 +27,18 @@ except AttributeError:
 def set_arguments():
 	parser = ArgumentParser()
 	
-	parser.add_argument("--units", default=256, type=int, help="")
 	parser.add_argument("--mode", default="train,evaluate", help="train")
+	parser.add_argument("--task", default="autoencoder", 
+                        help="{autoencoder, autoenc-last, token-posi}")  # Note: "-", not "_".
 	parser.add_argument("--data_name", default="autoencoder")
-	parser.add_argument("--task", default="autoencoder", help="{autoencoder, autoenc-last}")  # Note: "-", not "_".
+	parser.add_argument("--units", default=256, type=int, help="")
+	parser.add_argument("--random_seed", default=1, type=int)
 	
 	# Arguments only for training.
 	parser.add_argument("--max_epochs", default=70, type=int, help="")
 	parser.add_argument("--batch_size", default=128, type=int)
+	parser.add_argument("--enable_earlyStop", default=True, type=bool)
 	parser.add_argument("--earlyStop_acc", default=0.99)
-	parser.add_argument("--random_seed", default=1, type=int)
 	
 	args = parser.parse_args()
 	args.setting_name = "%s_units=%s_seed=%d" % (args.data_name, args.units, args.random_seed)

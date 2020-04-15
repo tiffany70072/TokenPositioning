@@ -163,6 +163,23 @@ def evaluate_autoencoder_last_step(real=None, pred=None, EOS_token=2):
                 break
     return correct / float(real.shape[0])
     
+
+def evaluate_token_position(control, pred):
+    """
+    Used for "token-posi".
+    Calculate only if pred[control:position] = control:token
+    """
+    assert len(control.shape) == 2, "Control must be 2d-array."
+    assert len(pred.shape) == 2, "Pred must be 2d-array."
+    
+    correct = 0
+    for i in range(control.shape[0]):
+        target_token, target_position = control[i][0], control[0][1]
+        if pred[i][target_position - 1] == target_token:
+            correct += 1
+    return correct / float(control.shape[0])
+
+
     
 """
 def check_accuracy(self, check_list=["word"], N=1000, inputs=None, real=None, pred=None, n=1000):
