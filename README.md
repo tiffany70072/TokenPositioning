@@ -54,7 +54,7 @@ tgt_padded = pad_sequences(tgt, maxlen=max_tgt_len, padding='post', truncating='
 ```
 
 ## How to run neuron_selection
-1. 在 src 底下，run ```pipeline_neuron_selection.py``` 或是跑在 app 底下開 neuron_selection_0415.ipynb，兩個是一樣的東西
+1. 在 src 底下，run ```python3 pipeline_neuron_selection.py --...``` 或是跑在 app 底下開 neuron_selection_0415.ipynb，兩個是一樣的東西
 2. 需要設定 task, data_name, units, random_seed，找到你現在想要分析的是哪個存好的 model（所有值就跟訓練時設定一樣）
 3. 需要設定 token, T_list，表示你現在想要分析的是哪個 token 跟哪些 T，例如 token = 3, T_list = [5, 7]，每跑一次只會分析一個 token 
 4. 裡面會做幾件事
