@@ -1,0 +1,14 @@
+==================================================
+task = autoenc-last
+data = synthesis_normal_uniform_autoencoder
+units = 8
+epochs = 0,	loss = 2.23,	val_loss = 1.38,	val_each_acc = 0.8473,	all = 0.0000,	last = 0.0000
+epochs = 1,	loss = 1.27,	val_loss = 1.21,	val_each_acc = 0.9097,	all = 0.4081,	last = 0.4082
+epochs = 2,	loss = 1.19,	val_loss = 1.18,	val_each_acc = 0.9081,	all = 0.4033,	last = 0.4082
+epochs = 3,	loss = 1.18,	val_loss = 1.17,	val_each_acc = 0.9125,	all = 0.4320,	last = 0.4299
+epochs = 4,	loss = 1.17,	val_loss = 1.17,	val_each_acc = 0.9108,	all = 0.4257,	last = 0.4295
+epochs = 5,	loss = 1.15,	val_loss = 1.12,	val_each_acc = 0.9536,	all = 0.6989,	last = 0.6940
+epochs = 6,	loss = 1.09,	val_loss = 1.08,	val_each_acc = 0.9577,	all = 0.7229,	last = 0.7287
+epochs = 7,	loss = 1.06,	val_loss = 1.04,	val_each_acc = 0.9843,	all = 0.8984,	last = 0.8988
+epochs = 8,	loss = 1.04,	val_loss = 1.03,	val_each_acc = 0.9846,	all = 0.9003,	last = 0.8988
+epochs = 9,	loss = 1.03,	val_loss = 1.02,	val_each_acc = 0.9996,	all = 0.9951,	last = 0.9960

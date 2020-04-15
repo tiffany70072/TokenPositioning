@@ -1,0 +1,4 @@
+==================================================
+task = autoenc-last
+data = english_lyric_autoencoder_last
+units = 128

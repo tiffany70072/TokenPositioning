@@ -29,35 +29,30 @@ class DataGenerator():
         
         np.random.seed(random_state)
 
-        train_sent_num_dist = self.getLenSentNum(self.min_len, self.max_len, self.len_dist, self.train_size)
-        valid_sent_num_dist = self.getLenSentNum(self.min_len, self.max_len, self.len_dist, self.valid_size)
+        total_size = self.train_size + self.valid_size
 
-        train_token_sent_num_dist = []
-        for sidx, size in enumerate(train_sent_num_dist):
+        all_sent_num_dist = self.getLenSentNum(self.min_len, self.max_len, self.len_dist, self.total_size)
+
+        all_token_sent_num_dist = []
+        for sidx, size in enumerate(all_sent_num_dist):
             tmp = self.getLenSentNum(0, (self.min_len+sidx-1), self.token_dist, size) \
                 + [ 0 for i in range(self.max_len - min_len - sidx) ]
-            train_token_sent_num_dist.append(tmp)
-        train_token_sent_num_dist = np.array(train_token_sent_num_dist).sum(axis=0).tolist()
+            all_token_sent_num_dist.append(tmp)
+        all_token_sent_num_dist = np.array(all_token_sent_num_dist).sum(axis=0).tolist()
 
-        valid_token_sent_num_dist = []
-        for sidx, size in enumerate(valid_sent_num_dist):
-            tmp = self.getLenSentNum(0, (self.min_len+sidx-1), self.token_dist, size) \
-                + [ 0 for i in range(self.max_len - min_len - sidx) ]
-            valid_token_sent_num_dist.append(tmp)
-        valid_token_sent_num_dist = np.array(valid_token_sent_num_dist).sum(axis=0).tolist()
-
-        train_encode_sent = self.generate_sentences(train_sent_num_dist, self.vocab_dist, self.min_len)
-        valid_encode_sent = self.generate_sentences(valid_sent_num_dist, self.vocab_dist, self.min_len)
-
-        train_control, train_decode_sent = self.generateControlAndDecode(self.min_len, self.max_len, train_sent_num_dist, train_token_sent_num_dist, self.vocab_dist)
-        valid_control, valid_decode_sent = self.generateControlAndDecode(self.min_len, self.max_len, valid_sent_num_dist, valid_token_sent_num_dist, self.vocab_dist)
-
+        all_encode_sent = self.generate_sentences(all_sent_num_dist, self.vocab_dist, self.min_len)
+        
+        all_control, all_decode_sent = self.generateControlAndDecode(self.min_len, \
+            self.max_len, all_sent_num_dist, all_token_sent_num_dist, self.vocab_dist)
+        
         # post-processing ex: merge control signal to encode sent, add <SOS>, <EOS>, <PAD>
-        train_data = self.post_processing(train_encode_sent, train_decode_sent, train_control)
-        valid_data = self.post_processing(valid_encode_sent, valid_decode_sent, valid_control)
+        all_data = self.post_processing(all_encode_sent, all_decode_sent, all_control)
 
-        # dumpFile(train_data, self.folder_name)
-        # dumpFile(valid_data, self.folder_name)
+        train_encode_data, valid_encode_data, train_decode_data, valid_decode_data = \
+            train_test_split( all_data[0], all_data[1], test_size=valid_size, random_state=random_state)
+        
+        train_data = (train_encode_data, train_decode_data)
+        valid_data = (valid_encode_data, valid_decode_data)
 
         return train_data, valid_data
 
@@ -93,7 +88,6 @@ class DataGenerator():
             
             len_sent_num[peak_idx_1] += math.floor(rest_data_size / 2)
             len_sent_num[peak_idx_2] += math.ceil(rest_data_size / 2)
-            
         else:
             raise NotImplementedError()
 
@@ -202,12 +196,12 @@ class DataGenerator():
 
         for i in range(len(encode_sent)):
             # add EOS to encode sentence
-            encode_sent[i].append(EOS_id)
+            encode_sent[i] = [SOS_id] + encode_sent[i] + [EOS_id]
             # add control signal
             encode_sent[i] += list(signal[i])
             # pad sentence
             encode_sent[i] = self.padding(encode_sent[i], PAD_id, \
-                self.max_len + 1 + int(2 * signal_num), "front")
+                self.max_len + 2 + int(2 * signal_num), "front")
 
         for i in range(len(decode_sent)):
             decode_sent[i] = [SOS_id] + decode_sent[i] + [EOS_id]
@@ -221,25 +215,21 @@ class DataGenerator():
         if not os.path.exists(out_folder):
             os.mkdir(out_folder)
 
-        np.save( os.path.join(out_folder, data_type+"_encode.npy"), np.array(data_pair[0]) )
-        np.save( os.path.join(out_folder, data_type+"_decode.npy"), np.array(data_pair[1]) )
-
-
-
+        np.save( os.path.join(out_folder, "encoder_" + data_type + ".npy"), np.array(data_pair[0]) )
+        np.save( os.path.join(out_folder, "decoder_" + data_type + ".npy"), np.array(data_pair[1]) )
 
 
 
 if __name__ == '__main__':
 
     # parser = argparse.ArgumentParser()
-    
 
     vocab_dist = [0.4, 0.3, 0.2, 0.1]
     min_len = 10
     max_len = 10
     len_dist = 'uniform'
     token_dist = 'uniform'
-    folder_name = "synthesis_normal_normal/"
+    folder_name = "./data/synthesis_normal_normal_control_signal/"
     train_size = 50000
     valid_size = 20000
 
@@ -255,7 +245,7 @@ if __name__ == '__main__':
     max_len = 13
     len_dist = 'normal'
     token_dist = 'uniform'
-    folder_name = "synthesis_normal_uniform/"
+    folder_name = "./data/synthesis_normal_uniform_control_signal/"
     train_size = 50000
     valid_size = 20000
 
