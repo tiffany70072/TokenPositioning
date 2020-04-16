@@ -2,3 +2,26 @@
 task = autoenc-last
 data = english_lyric_autoencoder_last
 units = 128
+epochs = 0,	loss = 60.64,	val_loss = 3.89,	val_each_acc = 0.8311,	all = 0.0000,	last = 0.0000
+epochs = 1,	loss = 3.30,	val_loss = 3.01,	val_each_acc = 0.8340,	all = 0.0116,	last = 0.0124
+epochs = 2,	loss = 2.51,	val_loss = 1.88,	val_each_acc = 0.8922,	all = 0.3573,	last = 0.3535
+epochs = 3,	loss = 1.47,	val_loss = 1.26,	val_each_acc = 0.9673,	all = 0.8100,	last = 0.8115
+epochs = 4,	loss = 1.20,	val_loss = 1.17,	val_each_acc = 0.9799,	all = 0.8856,	last = 0.8864
+epochs = 5,	loss = 1.10,	val_loss = 1.11,	val_each_acc = 0.9868,	all = 0.9264,	last = 0.9256
+epochs = 6,	loss = 1.08,	val_loss = 1.09,	val_each_acc = 0.9890,	all = 0.9381,	last = 0.9371
+epochs = 7,	loss = 1.06,	val_loss = 1.08,	val_each_acc = 0.9905,	all = 0.9474,	last = 0.9476
+epochs = 8,	loss = 1.04,	val_loss = 1.07,	val_each_acc = 0.9914,	all = 0.9493,	last = 0.9484
+epochs = 9,	loss = 1.03,	val_loss = 1.06,	val_each_acc = 0.9926,	all = 0.9582,	last = 0.9578
+epochs = 10,	loss = 1.03,	val_loss = 1.06,	val_each_acc = 0.9927,	all = 0.9591,	last = 0.9600
+epochs = 11,	loss = 1.03,	val_loss = 1.05,	val_each_acc = 0.9940,	all = 0.9660,	last = 0.9644
+epochs = 12,	loss = 1.02,	val_loss = 1.05,	val_each_acc = 0.9938,	all = 0.9652,	last = 0.9651
+epochs = 13,	loss = 1.02,	val_loss = 1.05,	val_each_acc = 0.9941,	all = 0.9656,	last = 0.9647
+epochs = 14,	loss = 1.02,	val_loss = 1.06,	val_each_acc = 0.9937,	all = 0.9626,	last = 0.9636
+epochs = 15,	loss = 1.02,	val_loss = 1.05,	val_each_acc = 0.9948,	all = 0.9705,	last = 0.9688
+epochs = 16,	loss = 1.02,	val_loss = 1.05,	val_each_acc = 0.9949,	all = 0.9718,	last = 0.9702
+epochs = 17,	loss = 1.02,	val_loss = 1.05,	val_each_acc = 0.9950,	all = 0.9712,	last = 0.9698
+epochs = 18,	loss = 1.02,	val_loss = 1.05,	val_each_acc = 0.9941,	all = 0.9647,	last = 0.9645
+epochs = 19,	loss = 1.01,	val_loss = 1.05,	val_each_acc = 0.9951,	all = 0.9712,	last = 0.9725
+epochs = 20,	loss = 1.01,	val_loss = 1.04,	val_each_acc = 0.9952,	all = 0.9745,	last = 0.9748
+epochs = 21,	loss = 1.01,	val_loss = 1.04,	val_each_acc = 0.9957,	all = 0.9761,	last = 0.9759
+epochs = 22,	loss = 1.01,	val_loss = 1.04,	val_each_acc = 0.9957,	all = 0.9764,	last = 0.9761
