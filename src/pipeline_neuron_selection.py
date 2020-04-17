@@ -157,6 +157,71 @@ def verify_store_one_token(token):
         for t in ig_neuron[T]:
             verify_store_one_step(T, t, store_neuron[T][t], ig_neuron[T][t], seq2seq, sample, real)
     
+def verify_counter_one_step(T, t, feature1, feature2, seq2seq, sample, real, token):
+    print("T=%d\tt=%d\tN1=%d\tN2=%d" % (T, t, len(feature1), len(feature2)), end="\t")
+    neuron_mapping.evaluate_intersection(feature1, feature2, verbose=2)
+    feature = neuron_mapping.get_intersection(feature1, feature2)
+    print("\n", end="\t")
+    pred = verification.verify_decoder(seq2seq, sample, feature, time_step=t, 
+                                       mode="disable", replace_by="last_h", verbose=2)
+    evaluator.evaluate_autoencoder_at_time(real, pred, time_step=T, verbose=2)  
+    evaluator.evaluate_autoencoder_token(real, pred, token=token)
+    
+    
+def verify_counter_one_token(token):
+    with open(os.path.join(saved_path, 'neuron_token=%d.pickle' % token), 'rb') as handle:
+        result = pickle.load(handle)
+        counter_neuron = result['counter']
+        ig_neuron = result['ig']
+        
+    for T in ig_neuron:
+        si1 = sample_getter.get_sample_by_one_condition(seq2seq.decoder_in_test, 
+                                                        token=token, position=T, N=100)
+        sample = seq2seq.encoder_in_test[si1]
+        real = evaluator.get_evaluate_real(seq2seq, si1)
+        verify_original_model(seq2seq, sample, real, token, T)
+        for t in ig_neuron[T]:
+            verify_counter_one_step(T, t, counter_neuron[T], ig_neuron[T][t], 
+                                    seq2seq, sample, real, token)
+        break
+        
+
+def enable_important_neuron_one_token(token):
+    with open(os.path.join(saved_path, 'neuron_token=%d.pickle' % token), 'rb') as handle:
+        result = pickle.load(handle)
+        store_neuron = result['store']
+        counter_neuron = result['counter']
+        ig_neuron = result['ig']
+        
+    for T in ig_neuron:
+        si1 = sample_getter.get_sample_by_one_condition(seq2seq.decoder_in_test, 
+                                                        token=token, position=T, N=100)
+        sample = seq2seq.encoder_in_test[si1]
+        real = evaluator.get_evaluate_real(seq2seq, si1)
+        verify_original_model(seq2seq, sample, real, token, T)
+        for t in ig_neuron[T]:
+            important_store = get_intersection(store_neuron[T][t], ig_neuron[T][t])
+            important_counter = get_intersection(counter_neuron[T], ig_neuron[T][t])
+            important_neuron = list(set(important_store).union(set(important_counter)))
+            print("T=%d, t=%d, (%d, %d, %d)" % (T, t, len(important_neuron), 
+                                                len(important_store), len(important_counter)))            
+            print("\t", end="")
+            pred = verification.verify_decoder(seq2seq, sample, important_neuron, time_step=t, 
+                                           mode="enable", replace_by="zero", verbose=2)
+            evaluator.evaluate_token(pred, token, T + 3)
+            print("\t\t\t", end="")
+            evaluator.evaluate_autoencoder_at_time(real, pred, time_step=T, verbose=2)
+            #print(pred[:3])
+            print("\t", end="")
+            pred = verification.verify_decoder(seq2seq, sample, important_neuron, time_step=t, 
+                                           mode="disable", replace_by="zero", verbose=2)
+            evaluator.evaluate_token(pred, token, T + 3)
+            print("\t\t\t", end="")
+            evaluator.evaluate_autoencoder_at_time(real, pred, time_step=T, verbose=2)
+            #print(pred[:3])
+
+
+
 
 def check_saved_path(saved_path):
     try:
@@ -187,9 +252,9 @@ with open(os.path.join(saved_path, 'neuron_token=%d.pickle' % token), 'wb') as h
     pickle.dump(data, handle)
     
 # Run neuron verification.
-verify_store_one_token(token=token)
+verify_store_one_token(token)
 verify_counter_one_token(token)
-    
+enable_important_neuron_one_token(token)  # Enable store and counter at the same time.
 
     
     
