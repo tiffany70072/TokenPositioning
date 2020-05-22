@@ -76,23 +76,27 @@ def accuracy_length(y_true, y_pred):
 	return accuracy
 
 
-def get_trained_model(random_seed=2):
+def get_trained_model(task='autoencoder', data_name='autoencoder', units=256, random_seed=2):
     import evaluator
     from seq2seq import Seq2Seq
     from argparse import ArgumentParser
     parser = ArgumentParser()
     args = parser.parse_args(args=[])
-    args.units = 256
     args.mode = "analysis"
-    args.data_name = "autoencoder"
-    args.task = "autoencoder"
+    args.task = task
+    args.data_name = data_name
+    args.units = units
     args.random_seed = random_seed
-    args.model_path = "../saved_model/%s_units=%s_seed=%d" % (args.task, args.units, args.random_seed)
+    args.model_path = "../saved_model/%s_units=%s_seed=%d" % (
+        args.data_name, args.units, args.random_seed)
     
     seq2seq = Seq2Seq(args)
     seq2seq.load_seq2seq(args.model_path)
     print("\tmode=%s, units=%d, model_path=%s" % (seq2seq.mode, seq2seq.units, seq2seq.model_path))
-    whole_accuracy, each_accuracy = evaluator.evaluate_autoencoder(seq2seq=seq2seq)
+    if task == 'autoencoder' or task == 'autoenc-last':
+        whole_accuracy, each_accuracy = evaluator.evaluate_autoencoder(seq2seq=seq2seq)
+    else:
+        raise 'no this task'
     assert whole_accuracy > 0.93 and each_accuracy > 0.99, "Load model failed."
     return seq2seq
     

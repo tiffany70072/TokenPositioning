@@ -3,11 +3,14 @@ import pdb
 import random
 from math import ceil
 from numpy.random import seed
+import pickle
 from tensorflow.compat.v1 import set_random_seed
+import re
 
 from tensorflow.keras import metrics
 from tensorflow.keras import optimizers
 from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 
 
 import utils
@@ -20,7 +23,8 @@ class Trainer(object):
 		self.batch_size = args.batch_size
 		self.max_epochs = args.max_epochs
 		self.log_file = args.log_file
-		self.earlyStop_acc = args.earlyStop_acc
+		self.enable_earlyStop = args.enable_earlyStop
+		self.earlyStop_acc = float(args.earlyStop_acc)
 		self.seq2seq = seq2seq
 
 		seed(args.random_seed)
@@ -32,6 +36,39 @@ class Trainer(object):
 			f.write("task = %s\n" % args.task)
 			f.write("data = %s\n" % args.data_name)
 			f.write("units = %.d\n" % args.units)
+
+
+		self.word2index = {}
+		self.index2word = {}
+		self.word2pho = {}
+		self.vowels = []
+
+		self.init_dict()
+
+	def init_dict(self):
+
+		with open("../data/Vowel.txt","r") as fd:
+			for line in fd:
+				tmp = line.strip('\n')
+				self.vowels.append(tmp)
+			fd.close()
+		
+		with open("../data/word2index", "rb") as fd:
+			self.word2index = pickle.load(fd)
+			fd.close()
+
+		with open("../data/index2word", "rb") as fd:
+			self.index2word = pickle.load(fd)
+			fd.close()
+		
+		with open("../data/cmudict-0.7b.txt", "r") as fd:
+			for line in fd:
+				tmp = line.strip('\n').split('  ')
+				w = tmp[0]
+				phos = re.sub("[0-9]", "", tmp[1])
+				self.word2pho[w] = phos
+			fd.close()
+
 
 
 	def train(self): 
@@ -55,16 +92,73 @@ class Trainer(object):
 		
 		for epoch in range(self.max_epochs):
 			history = self.seq2seq.seq2seq_model.fit_generator(
-				self.generate_batch_data(self.seq2seq.encoder_in, self.seq2seq.decoder_in, self.seq2seq.decoder_out),
+				self.generate_batch_data(self.seq2seq.encoder_in, 
+										self.seq2seq.decoder_in, 
+										self.seq2seq.decoder_out),
 				steps_per_epoch=steps_per_epoch,
-				validation_data=self.generate_batch_data(self.seq2seq.encoder_in_valid, self.seq2seq.decoder_in_valid, self.seq2seq.decoder_out_valid),
+				validation_data=self.generate_batch_data(self.seq2seq.encoder_in_valid, 
+														self.seq2seq.decoder_in_valid, 
+														self.seq2seq.decoder_out_valid),
 				validation_steps=validation_steps, 
 				callbacks=earlyStop)  # Default epochs = 1 in keras.
 			
 			self.seq2seq.save_seq2seq()
 			self.trace_history(epoch, history)
-			if (history.history["val_whole_accuracy"][0] == 1.0 and history.history["val_each_accuracy"][0] == 1.0) or history.history["val_whole_accuracy"][0] >= self.earlyStop_acc: 
-				break
+
+			if self.enable_earlyStop:
+				if history.history["val_whole_accuracy"][0] == 1.0\
+					or history.history["val_whole_accuracy"][0] >= self.earlyStop_acc: 
+					break
+				if self.seq2seq.task == 'token-posi':
+					control = self.seq2seq.encoder_in_test
+					pred = self.seq2seq.inference_batch(control)  
+					pred = pad_sequences(pred, maxlen=self.seq2seq.tgt_max_len, 
+                                         padding='post', truncating='post')
+					accuracy = evaluator.evaluate_token_position(control=control, pred=pred)
+					if accuracy >= self.earlyStop_acc:
+						break
+				
+				if self.seq2seq.task == 'eos-posi':
+					control = self.seq2seq.encoder_in_test
+					bs = 30000
+					batch_num = np.ceil(control.shape[0] / bs).astype(int)
+					accuracy = 0.0
+					for b in range(batch_num):
+						start = b * bs
+						end = (b+1) * bs
+						pred = self.seq2seq.inference_batch(control[start:end])  
+						pred = pad_sequences(pred, maxlen=self.seq2seq.tgt_max_len, 
+											padding='post', truncating='post')
+						
+						correct = evaluator.evaluate_eos_position(control=control[start:end], pred=pred,
+							index2word=self.index2word
+						)
+						accuracy += correct
+					accuracy /= control.shape[0]
+					if accuracy >= self.earlyStop_acc:
+						break
+				
+				if self.seq2seq.task == 'rhy-posi':
+					control = self.seq2seq.encoder_in_test
+					
+					bs = 1024
+
+					batch_num = np.ceil(control.shape[0] / bs).astype(int)
+					accuracy = 0.0
+					for b in range(batch_num):
+						start = b * bs
+						end = (b+1) * bs
+						pred = self.seq2seq.inference_batch(control[start:end])  
+						pred = pad_sequences(pred, maxlen=self.seq2seq.tgt_max_len, 
+											padding='post', truncating='post')
+						
+						correct = evaluator.evaluate_rhy_position(control=control[start:end], pred=pred, 
+							index2word=self.index2word, word2pho=self.word2pho, vowel=self.vowels
+						)
+						accuracy += correct
+					accuracy /= control.shape[0]
+					if accuracy >= self.earlyStop_acc:
+						break
 
 
 	def generate_batch_data(self, encoder_in, decoder_in, decoder_out):
@@ -96,7 +190,7 @@ class Trainer(object):
 				#fout.write("acc = %.2f,\t" % accuracy)
 				#fout.write("xh = %.2f, %.2f, %.2f\n" % (xh_acc[0], xh_acc[1], xh_acc[2]))
 		
-		if self.seq2seq.task == "autoenc-last":
+		elif self.seq2seq.task == "autoenc-last":
 			whole_accuracy, each_accuracy = evaluator.evaluate_autoencoder(seq2seq=self.seq2seq)
 			real, pred = evaluator.get_default_sample_from_seq2seq(self.seq2seq)
 			last_word_accuracy = evaluator.evaluate_autoencoder_last_step(real, pred)
@@ -108,4 +202,76 @@ class Trainer(object):
 				fout.write("val_each_acc = %.4f,\t" % history.history["val_each_accuracy"][0])
 				fout.write("all = %.4f,\t" % history.history["val_whole_accuracy"][0])
 				fout.write("last = %.4f\n" % last_word_accuracy)
+                
+		elif self.seq2seq.task == "token-posi":
+			control = self.seq2seq.encoder_in_test
+			pred = self.seq2seq.inference_batch(control)  
+			pred = pad_sequences(pred, maxlen=self.seq2seq.tgt_max_len, 
+                                 padding='post', truncating='post')
+			accuracy = evaluator.evaluate_token_position(control=control, pred=pred)
+			
+			with open(self.log_file, "a") as fout:
+				fout.write("epochs = %d,\t" % epoch)
+				fout.write("loss = %.2f,\t" % history.history["loss"][0])
+				fout.write("val_loss = %.2f,\t" % history.history["val_loss"][0])
+				fout.write("val_each_acc = %.4f,\t" % history.history["val_each_accuracy"][0])
+				fout.write("all = %.4f,\t" % history.history["val_whole_accuracy"][0])
+				fout.write("token = %.4f\n" % accuracy)
+		
+
+		elif self.seq2seq.task == "eos-posi":
+			control = self.seq2seq.encoder_in_test
+			
+			bs = 1024
+
+			batch_num = np.ceil(control.shape[0] / bs).astype(int)
+			accuracy = 0.0
+			for b in range(batch_num):
+				start = b * bs
+				end = (b+1) * bs
+				pred = self.seq2seq.inference_batch(control[start:end])  
+				pred = pad_sequences(pred, maxlen=self.seq2seq.tgt_max_len, 
+									padding='post', truncating='post')
+				correct = evaluator.evaluate_eos_position(control=control[start:end], pred=pred,
+							index2word=self.index2word
+						)
+				accuracy += correct
+			accuracy /= control.shape[0]
+			
+			with open(self.log_file, "a") as fout:
+				fout.write("epochs = %d,\t" % epoch)
+				fout.write("loss = %.2f,\t" % history.history["loss"][0])
+				fout.write("val_loss = %.2f,\t" % history.history["val_loss"][0])
+				fout.write("val_each_acc = %.4f,\t" % history.history["val_each_accuracy"][0])
+				fout.write("all = %.4f,\t" % history.history["val_whole_accuracy"][0])
+				fout.write("token = %.4f\n" % accuracy)
+		
+
+		elif self.seq2seq.task == "rhy-posi":
+			control = self.seq2seq.encoder_in_test
+			
+			bs = 1024
+
+			batch_num = np.ceil(control.shape[0] / bs).astype(int)
+			accuracy = 0.0
+			for b in range(batch_num):
+				start = b * bs
+				end = (b+1) * bs
+				pred = self.seq2seq.inference_batch(control[start:end])  
+				pred = pad_sequences(pred, maxlen=self.seq2seq.tgt_max_len, 
+									padding='post', truncating='post')
+				correct = evaluator.evaluate_rhy_position(control=control[start:end], pred=pred, 
+					index2word=self.index2word, word2pho=self.word2pho, vowel=self.vowels
+				)
+				accuracy += correct
+			accuracy /= control.shape[0]
+			
+
+			with open(self.log_file, "a") as fout:
+				fout.write("epochs = %d,\t" % epoch)
+				fout.write("loss = %.2f,\t" % history.history["loss"][0])
+				fout.write("val_loss = %.2f,\t" % history.history["val_loss"][0])
+				fout.write("val_each_acc = %.4f,\t" % history.history["val_each_accuracy"][0])
+				fout.write("all = %.4f,\t" % history.history["val_whole_accuracy"][0])
+				fout.write("token = %.4f\n" % accuracy)
 				

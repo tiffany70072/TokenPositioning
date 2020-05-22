@@ -38,7 +38,7 @@ class Seq2Seq(object):
 			import data_preprocessing_autoencoder
 			self = data_preprocessing_autoencoder.main(self)
 
-		elif self.task == "autoenc-last":
+		elif self.task == "autoenc-last" or self.task == 'token-posi' or self.task == "eos-posi" or self.task == "rhy-posi":
 			print("get_data")
 			self.encoder_in, self.decoder_in, self.decoder_out = data_loader.load_data(task=self.task, data_name=self.data_name, data_type="train")
 			self.encoder_in_valid, self.decoder_in_valid, self.decoder_out_valid = data_loader.load_data(task=self.task, data_name=self.data_name, data_type="valid")
@@ -52,7 +52,7 @@ class Seq2Seq(object):
 			token_size = int(max(np.max(self.encoder_in), np.max(self.decoder_in))) + 1  # Token size of autoencoder are same between encoder data and decoder data.         
 			self.src_token_size = token_size
 			self.tgt_token_size = token_size
-			
+
 		elif (task == "control_length" or task == "control_length_content" 
 			or task == "control_rhyme_content" or task == "control_pos_content" or task == "toy_pos_signal"):
 			self.src_token_size = np.max(self.encoder_in) + 1  # TODO: Remove this if/else.
@@ -106,13 +106,16 @@ class Seq2Seq(object):
 
 		while np.sum(stop_condition) < input_seq.shape[0]:
 			decoder_outputs = self.decoder_model.predict([target_seq] + states_value, verbose=0, batch_size=256)
+			
 			if len(decoder_outputs) == 2:
 				output_tokens = decoder_outputs[0]
 				states_value = [decoder_outputs[1]]
 			elif len(decoder_outputs) == 3:
 				output_tokens = decoder_outputs[0]
 				states_value = decoder_outputs[1:]
+			
 			sampled_token_index = np.argmax(output_tokens[:, -1, :], axis=-1) # Sample a token
+			
 			for i in range(target_seq.shape[0]):
 				if (sampled_token_index[i] == EOS_token or len(decoded_sentence[i]) > self.tgt_max_len):
 					decoded_sentence[i] += [sampled_token_index[i]]

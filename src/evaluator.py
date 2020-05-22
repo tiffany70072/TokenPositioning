@@ -1,5 +1,6 @@
 import numpy as np 
 from tensorflow.keras.preprocessing.sequence import pad_sequences
+import re
 
 
 def get_evaluate_real(seq2seq, sample_index):
@@ -163,6 +164,86 @@ def evaluate_autoencoder_last_step(real=None, pred=None, EOS_token=2):
                 break
     return correct / float(real.shape[0])
     
+
+def evaluate_token_position(control, pred):
+    """
+    Used for "token-posi".
+    Calculate only if pred[control:position] = control:token
+    """
+    assert len(control.shape) == 2, "Control must be 2d-array."
+    assert len(pred.shape) == 2, "Pred must be 2d-array."
+    
+    correct = 0
+    for i in range(control.shape[0]):
+        target_token, target_position = control[i][0], control[0][1]
+        if pred[i][target_position - 1] == target_token:
+            correct += 1
+    return correct #correct / float(control.shape[0])
+
+
+
+def getWordRhy(w, word2pho, vowel):
+    
+    rev_phos = word2pho[w].split()[::-1]
+    rev_phos = " ".join(rev_phos)
+    
+    search = re.search("|".join(vowel), rev_phos)
+    start_idx = 0#search.start()
+    end_idx = search.end()
+    
+    rev_rhy = rev_phos[start_idx:end_idx]
+    rhy = " ".join(rev_rhy.split()[::-1])
+    return rhy
+
+
+def evaluate_rhy_position(control, pred, index2word, word2pho, vowel):
+    """
+    Used for "token-posi".
+    Calculate only if pred[control:position] = control:token
+    """
+    assert len(control.shape) == 2, "Control must be 2d-array."
+    assert len(pred.shape) == 2, "Pred must be 2d-array."
+    
+    correct = 0
+    for i in range(control.shape[0]):
+        target_token, target_position = control[i][-2], int(index2word[control[i][-1]])
+        
+        pred_w_idx = pred[i,target_position-1]
+        pred_w = index2word[pred_w_idx].upper()
+
+        pred_w_rhy = getWordRhy(pred_w, word2pho, vowel)
+        target_rhy = index2word[target_token]
+        
+        if target_rhy == pred_w_rhy:
+            correct += 1
+    
+    return correct #/ float(control.shape[0])
+
+
+
+def evaluate_eos_position(control, pred, index2word):
+    """
+    Used for "token-posi".
+    Calculate only if pred[control:position] = control:token
+    """
+    assert len(control.shape) == 2, "Control must be 2d-array."
+    assert len(pred.shape) == 2, "Pred must be 2d-array."
+    
+    correct = 0
+    for i in range(control.shape[0]):
+        target_token, target_position = control[i][-2], int(index2word[control[i][-1]])
+        
+        if target_token in pred[i]:
+            eos_idx = np.where(pred[i] == (target_token))[0][0]
+            if eos_idx == (target_position-1):
+                correct += 1
+    
+    return correct #/ float(control.shape[0])
+
+
+
+
+
     
 """
 def check_accuracy(self, check_list=["word"], N=1000, inputs=None, real=None, pred=None, n=1000):

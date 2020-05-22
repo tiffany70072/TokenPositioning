@@ -4,7 +4,7 @@ from sklearn.model_selection import train_test_split
 
 
 def load_data(task, data_name, data_type):
-    if task == "autoenc-last":
+    if task == "autoenc-last" or task == 'token-posi' or 'eos-posi':
         assert data_type == "train" or data_type == "valid", "no this data type."
         data_path = os.path.join("../data", data_name)
         encoder_data = np.load(os.path.join(data_path, "encoder_%s.npy" % data_type))
